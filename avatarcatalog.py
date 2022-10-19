@@ -1,7 +1,8 @@
 import json,requests,atexit,argparse,os
 from time import sleep
-
+from termcolor import colored as cl
 args = argparse.ArgumentParser()
+args.add_argument('-g','--isgroup',help="Specify if user is a group, 1:True 0:False",type=int,required=True)
 args.add_argument('-cn','--creatorname',help="Creator's name",type=str,required=True)
 args.add_argument('-q','--queue',help='Amount of processes that will be queued',type=int,default=10)
 args.add_argument('-d','--delay',help='delay for each end of the process',type=int,default=5)
@@ -10,9 +11,11 @@ args = args.parse_args()
 url = 'https://catalog.roblox.com/v1/search/items/details?'
 assets = []
 
-acceptable = ['tail','fin','critter','ear','ears']
-unacceptable = ['pigtail','elf','earrings','beard','heart','elf','hood','ponytail']
+acceptable = ['tail','fin','critter','ear','ears','synth','wing','head','fluff']
+unacceptable = ['pigtail','elf','earrings','beard','heart','elf','hood','ponytail','spear','coat','woman','faceless','shadow','kawaii','glitch','phone','smug','void','anime','evil']
+exceptions = ['hallowogen']
 
+isgroup = args.isgroup
 CreatorName = args.creatorname
 limit = 30
 time = args.queue
@@ -28,11 +31,12 @@ def error():
     exit = json.dumps(exit)
     file.write(exit)
     file.close()
+    print('completed                              ')
 
-finalurl = url+'CreatorName='+CreatorName+'&limit'+str(limit)
+
+finalurl = url+'CreatorType'+str(isgroup)+'&CreatorName='+CreatorName.replace(' ','%20')+'&limit'+str(limit)
 print(finalurl)
 content = requests.get(finalurl)
-
 content = json.loads(content.content)
 
 
@@ -46,7 +50,15 @@ def chkname(name=''):
     for i in range(len(unacceptable)):
         if unacceptable[i] in name:
             isOK = False
+            print(unacceptable[i],cl(name,color="red", attrs=["bold"]),'                                                  ')
             break
+    for i in range(len(exceptions)):
+        if exceptions[i] in name:
+            print(exceptions[i],name)
+            isOK = True
+            break
+    if isOK != False:
+        print(cl(name,color="green", attrs=["bold"]),'                                                  ')
     return isOK
 
 def itemiterate(info,list):
@@ -61,7 +73,7 @@ def nextpage(info,user):
     try:
         info = requests.get(url+'Cursor='+cursor+'&CreatorName='+user)
     except:
-        nextpage(info,user)
+        quit()
     if info.status_code == 200:
         return info
     else:
@@ -73,9 +85,7 @@ def Convert(lst):
 
 while time >= 0:
     itemiterate(content,assets)
+    print('processes in queue: '+str(time), end='\r')
     content = json.loads(nextpage(content,CreatorName).content)
     sleep(delay)
     time -= 1
-    print('processes in queue: '+str(time), end='\r')
-    
-
