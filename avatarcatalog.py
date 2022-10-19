@@ -1,16 +1,26 @@
-import json,requests,atexit
+import json,requests,atexit,argparse,os
 from time import sleep
+
+args = argparse.ArgumentParser()
+args.add_argument('-cn','--creatorname',help="Creator's name",type=str,required=True)
+args.add_argument('-q','--queue',help='Amount of processes that will be queued',type=int,default=10)
+args.add_argument('-d','--delay',help='delay for each end of the process',type=int,default=5)
+args = args.parse_args()
 
 url = 'https://catalog.roblox.com/v1/search/items/details?'
 assets = []
-file = open("accessory.json","w+")
 
-category = 1
-CreatorName = 'WhoToTrus'
+acceptable = ['tail','fin','critter','ear','ears']
+unacceptable = ['pigtail','elf','earrings','beard','heart','elf','hood','ponytail']
+
+CreatorName = args.creatorname
 limit = 30
-subcategory = 1
-time = 120
-delay = 5
+time = args.queue
+delay = args.delay
+
+file = os.getcwd()+'\\'+CreatorName+".json"
+print(file)
+file = open(file,"w+")
 
 @atexit.register 
 def error(): 
@@ -28,18 +38,16 @@ content = json.loads(content.content)
 
 def chkname(name=''):
     name = str.lower(name)
-    if 'tail' in name:
-        return True
-    elif 'fin' in name:
-        return True
-    elif 'critter' in name:
-        return True
-    elif 'ear' in name:
-        return True
-    elif 'ears' in name:
-        return True
-    else:
-        return False
+    isOK = False
+    for i in range(len(acceptable)):
+        if acceptable[i] in name:
+            isOK = True
+            break
+    for i in range(len(unacceptable)):
+        if unacceptable[i] in name:
+            isOK = False
+            break
+    return isOK
 
 def itemiterate(info,list):
     for i in range(len(info['data'])):
@@ -63,14 +71,11 @@ def Convert(lst):
     res_dct = {lst[i]: lst[i + 1] for i in range(0, len(lst), 2)}
     return res_dct
 
-while True:
+while time >= 0:
     itemiterate(content,assets)
     content = json.loads(nextpage(content,CreatorName).content)
     sleep(delay)
     time -= 1
-    print('processes left: '+str(time), end='\r')
+    print('processes in queue: '+str(time), end='\r')
     
 
-
-#if 'tail' in str.lower(content['data'][i]['name']) or'fin' in str.lower(content['data'][i]['name']) or'critter' in str.lower(content['data'][i]['name']) or'ears' in str.lower(content['data'][i]['name']) or'ear' in str.lower(content['data'][i]['name']):
-#        print(str.lower(content['data'][i]['name']))
