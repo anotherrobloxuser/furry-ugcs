@@ -12,7 +12,7 @@ url = 'https://catalog.roblox.com/v1/search/items/details?'
 assets = []
 
 acceptable = ['tail','fin','critter','ear','ears','synth','wing','head','fluff']
-unacceptable = ['pigtail','elf','earrings','beard','heart','elf','hood','ponytail','spear','coat','woman','faceless','shadow','kawaii','glitch','phone','smug','void','anime','evil']
+unacceptable = ['pigtail','elf','earrings','beard','heart','elf','hood','ponytail','spear','coat','woman','faceless','shadow','glitch','phone','smug','anime','evil','headset','gas mask','gear']
 exceptions = ['hallowogen']
 
 isgroup = args.isgroup
@@ -20,6 +20,7 @@ CreatorName = args.creatorname
 limit = 30
 time = args.queue
 delay = args.delay
+num = 0
 
 file = os.getcwd()+'\\'+CreatorName+".json"
 print(file)
@@ -36,8 +37,8 @@ def error():
 
 finalurl = url+'CreatorType'+str(isgroup)+'&CreatorName='+CreatorName.replace(' ','%20')+'&limit'+str(limit)
 print(finalurl)
-content = requests.get(finalurl)
-content = json.loads(content.content)
+content = requests.get(finalurl).json()
+content = content
 
 
 def chkname(name=''):
@@ -50,7 +51,7 @@ def chkname(name=''):
     for i in range(len(unacceptable)):
         if unacceptable[i] in name:
             isOK = False
-            print(unacceptable[i],cl(name,color="red", attrs=["bold"]),'                                                  ')
+            print(unacceptable[i],cl(name,color="red", attrs=["bold"]),'                                                                                                               ')
             break
     for i in range(len(exceptions)):
         if exceptions[i] in name:
@@ -58,34 +59,39 @@ def chkname(name=''):
             isOK = True
             break
     if isOK != False:
-        print(cl(name,color="green", attrs=["bold"]),'                                                  ')
+        print(cl(name,color="green", attrs=["bold"]),'                                                                                                               ')
     return isOK
 
-def itemiterate(info,list):
-    for i in range(len(info['data'])):
-        a = chkname(info['data'][i]['name'])
-        if a == True:
-            list.append(str(info['data'][i]['name']))
-            list.append(str(info['data'][i]['id']))
+def itemiterate(info,list,currentnum):
+    try:
+        for i in range(len(info['data'])):
+            a = chkname(info['data'][i]['name'])
+            if a == True:
+                list.append(str(info['data'][i]['name']))
+                list.append(str(info['data'][i]['id']))
+                currentnum += 1
+    except:
+        print('error')
+        return
+    return currentnum
 
 def nextpage(info,user):
-    cursor = info['nextPageCursor']
     try:
-        info = requests.get(url+'Cursor='+cursor+'&CreatorName='+user)
-    except:
-        quit()
-    if info.status_code == 200:
+        cursor = info['nextPageCursor']
+        info = requests.get(url+'Cursor='+cursor+'&CreatorName='+user).json()
         return info
-    else:
-        nextpage(info,user)
+    except:
+        return info
 
 def Convert(lst):
     res_dct = {lst[i]: lst[i + 1] for i in range(0, len(lst), 2)}
     return res_dct
 
 while time >= 0:
-    itemiterate(content,assets)
-    print('processes in queue: '+str(time), end='\r')
-    content = json.loads(nextpage(content,CreatorName).content)
+    num = itemiterate(content,assets,currentnum=num)
+    if not content['nextPageCursor']:
+        content['nextPageCursor'] = 'CURSOR MISSING'
+    print('processes in queue: '+str(time),' || nextpage cursor: '+content['nextPageCursor'],' || assets collected: '+str(num), end='\r')
+    content = nextpage(content,CreatorName)
     sleep(delay)
     time -= 1
